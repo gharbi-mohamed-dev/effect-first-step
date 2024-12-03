@@ -1,0 +1,6 @@
+BEGIN;
+ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ; 
+UPDATE "users" set "users"."created_at" = NOW() WHERE "users"."created_at" IS NULL;
+ALTER TABLE IF EXISTS "users" ALTER COLUMN IF EXISTS "created_at" SET NOT NULL; 
+ALTER TABLE IF EXISTS "users" ALTER COLUMN IF EXISTS "created_at" SET DEFAULT NOW();
+COMMIT;
