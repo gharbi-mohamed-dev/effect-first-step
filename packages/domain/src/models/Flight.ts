@@ -17,13 +17,10 @@ export type FlightId = typeof FlightId.Type
 export const FlightIdFromString = Schema.NumberFromString.pipe(
   Schema.compose(FlightId)
 )
-export const FlightDestination = Schema.Struct({
-  from: AirportIataCode,
-  to: AirportIataCode
-})
 
 export const FlightSegment = Schema.Struct({
-  ...FlightDestination.fields,
+  from: AirportIataCode,
+  to: AirportIataCode,
   departureAt: Schema.Date,
   arrivalAt: Schema.Date
 }).pipe(
@@ -35,45 +32,19 @@ export const FlightSegment = Schema.Struct({
       }
     }
   }),
+  Schema.filter(({ arrivalAt, departureAt }) => {
+    if (departureAt.getTime() >= arrivalAt.getTime()) {
+      return {
+        path: ["arrivalAt"],
+        message: `cannot be <= ${departureAt}`
+      }
+    }
+  }),
   Schema.filter(({ from, to }) => {
     if (from === to) {
       return {
         path: ["to"],
         message: `invalid '${to}' airport`
-      }
-    }
-  }),
-  Schema.transform(
-    Schema.Struct({
-      ...FlightDestination.fields,
-      departureAt: Schema.DateTimeZonedFromSelf,
-      arrivalAt: Schema.DateTimeZonedFromSelf
-    }),
-    {
-      strict: true,
-      decode({ arrivalAt, departureAt, from, to }) {
-        return {
-          from,
-          to,
-          arrivalAt: makeUnsafeZonedDateTime(arrivalAt, to),
-          departureAt: makeUnsafeZonedDateTime(departureAt, from)
-        }
-      },
-      encode({ arrivalAt, departureAt, from, to }) {
-        return {
-          from: from as AirportIataCode,
-          to: to as AirportIataCode,
-          arrivalAt: DateTime.toDate(arrivalAt),
-          departureAt: DateTime.toDate(departureAt)
-        }
-      }
-    }
-  ),
-  Schema.filter(({ arrivalAt, departureAt }) => {
-    if (!DateTime.lessThan(departureAt, arrivalAt)) {
-      return {
-        path: ["departureAt"],
-        message: `date time cannot be in the past`
       }
     }
   })
@@ -99,7 +70,7 @@ export const validateSegmentsOrder = (
       index
     })),
     Array.sortWith(({ departureAt }) => {
-      return departureAt
+      return DateTime.unsafeFromDate(departureAt)
     }, DateTime.Order)
   )
 
@@ -108,10 +79,7 @@ export const validateSegmentsOrder = (
     const prv = ordered[index - 1]
 
     if (
-      DateTime.greaterThanOrEqualTo(
-        prv.arrivalAt,
-        cur.departureAt
-      )
+      prv.arrivalAt.getTime() >= cur.departureAt.getTime()
     ) {
       return Option.some([prv.index, cur.index])
     }
@@ -138,6 +106,10 @@ export const Flight = Schema.Struct({
 
   stock: Schema.Struct({
     total: Schema.Positive,
-    inSell: Schema.NonNegative
-  }).pipe(Schema.filter(({ inSell, total }) => inSell <= total))
+    visible: Schema.NonNegative,
+    sold: Schema.NonNegative
+  }).pipe(
+    Schema.filter(({ total, visible }) => visible <= total),
+    Schema.filter(({ sold, total }) => sold <= total)
+  )
 })

@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "include": [
     "test",
-    "test/testcontainer.ts"
+    "test/_testcontainer.ts"
   ],
   "references": [
     {

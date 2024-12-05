@@ -3,6 +3,9 @@ import { Gender, Phone } from "./Shared.js"
 
 export const PersonName = Schema.Struct({})
 
+export const Id = Schema.Positive.pipe(Schema.brand("@domain/Guest/Id"))
+export const IdFromString = Schema.NumberFromString.pipe(Schema.compose(Id))
+
 export const Chd = Schema.TaggedStruct("CHD", {
   firstName: Schema.NonEmptyTrimmedString.pipe(Schema.compose(Schema.Lowercase)),
   lastName: Schema.NonEmptyTrimmedString.pipe(Schema.compose(Schema.Lowercase)),

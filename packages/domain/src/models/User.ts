@@ -1,15 +1,8 @@
 import { Schema } from "effect"
-import { Email, HashedPassword } from "./Shared.js"
-
-export const UserId = Schema.NumberFromString.pipe(
-  Schema.compose(Schema.BigIntFromNumber),
-  Schema.brand("UserId")
-)
-
-export type UserId = typeof UserId.Type
+import { Email, HashedPassword, Id } from "./Shared.js"
 
 export const User = Schema.Struct({
-  id: UserId,
+  id: Id,
   email: Email,
   hashedPassword: HashedPassword,
   createdAt: Schema.Date

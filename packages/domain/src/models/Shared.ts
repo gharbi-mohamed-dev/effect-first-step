@@ -1,5 +1,12 @@
 import { Schema } from "effect"
 
+export const Id = Schema.Union(Schema.BigIntFromSelf, Schema.BigIntFromNumber, Schema.BigInt).pipe(
+  Schema.filter((value) => value > 0),
+  Schema.brand("@domain/Shared/Id")
+)
+
+export const IdFromString = Schema.BigInt.pipe(Schema.compose(Id))
+
 export const Email = Schema.NonEmptyTrimmedString.pipe(
   Schema.compose(Schema.Lowercase),
   Schema.pattern(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/),
